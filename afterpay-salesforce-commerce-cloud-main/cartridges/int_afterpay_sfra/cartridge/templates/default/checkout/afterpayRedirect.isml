@@ -1,0 +1,20 @@
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<link rel="stylesheet" href="${URLUtils.staticURL('/css/global.css')}" />
+<isinclude url="${URLUtils.url('AfterpayWidget-IncludeAfterpayLibrary')}" />
+<script>
+    var countryCode = '${pdict.countryCode}';
+
+    window.onload = function () {
+        $(".loader-image").fadeOut("slow");
+        AfterPay.initialize({countryCode: countryCode});
+        AfterPay.redirect({token: '${pdict.apToken}'});
+    }
+
+</script>
+
+<div class="loader-image"></div>
+
+<div class="redirect-text">
+    <p>${Resource.msg('redirect.notification', pdict.apBrand, null)}</p>
+    <p class="notify-message">${Resource.msg('redirect.message', pdict.apBrand, null)}</p>
+</div>

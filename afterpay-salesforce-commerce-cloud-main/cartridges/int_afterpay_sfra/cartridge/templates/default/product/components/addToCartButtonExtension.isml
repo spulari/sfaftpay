@@ -1,0 +1,58 @@
+
+<iscomment>
+isExpressCheckoutFinalize - has consumer already gone through Afterpay Express Checkout and now is back on merchant site to finalize
+afterpayExpressPickupEnabled - Checks that cart only has items being picked up. If so, set pickup flag.
+afterpayExpressCheckoutPdpEnabled - is Afterpay express checkout enabled on pdp in site preferences
+afterpayExpressPickupEnabled - does the current cart and selected ship method indicate Afterpay Express Checkout should use in-store pickup mode
+</iscomment>
+<isscript>
+    var BrandUtilities = require("*/cartridge/scripts/util/afterpayUtilities.js").brandUtilities;
+    var countrycode = BrandUtilities.getCountryCode();
+    var sitePreferences = require("*/cartridge/scripts/util/afterpayUtilities.js").sitePreferencesUtilities;
+    var afterpayEnabled = sitePreferences.isAfterpayEnabled();
+    var afterpayExpressCheckoutEnabled = afterpayEnabled ? sitePreferences.isExpressCheckoutEnabled() : false;
+    var isExpressCheckoutFinalize = require('*/cartridge/scripts/util/afterpaySession').isExpressCheckoutFinalizeFlow();
+    var afterpayExpressCheckoutPdpEnabled = sitePreferences.isExpressCheckoutPdpEnabled();
+    var afterpayExpressCheckoutBuyNowEnabled = sitePreferences.isExpressCheckoutBuyNowEnabled();
+    var afterpayExpressCheckoutShippingStrategy = sitePreferences.getExpressCheckoutShippingStrategy() == 'integrated';
+    var AfterpayRefArchCOHelpers = require('~/cartridge/scripts/checkout/afterpayRefArchCheckoutHelpers');
+    var afterpayExpressPickupEnabled = AfterpayRefArchCOHelpers.shouldEnableExpressPickupMode();
+    var buttonClass = 'afterpay-buynow-button add-to-cart btn';
+    if (countrycode === 'GB') {
+        buttonClass = 'clearpay-buynow-button add-to-cart btn';
+    }
+</isscript>
+<isif condition="${afterpayExpressCheckoutEnabled && afterpayExpressCheckoutPdpEnabled}">
+    <isset name="afterpayExpressCheckoutPage" value="product_detail" scope="page" />
+    <isinclude template="product/components/afterpayexpresscheckout" />
+    <isscript>
+        var AfterpayCOHelpers = require('*/cartridge/scripts/checkout/afterpayCheckoutHelpers');
+        var disableAfterpayPaymentMethod = false;
+        if (product && product.price) {
+            disableAfterpayPaymentMethod =  ! AfterpayCOHelpers.isPriceWithinThreshold(
+                AfterpayRefArchCOHelpers.getProductPriceForMessaging(product.price)) || AfterpayCOHelpers.checkRestrictedProducts(product.id);
+        }
+        disableAfterpayPaymentMethod = disableAfterpayPaymentMethod || ! AfterpayCOHelpers.isPDPBasketAmountWithinThreshold();
+        
+        if (disableAfterpayPaymentMethod) {
+            buttonClass += ' afterpay-hide';
+        }
+    </isscript>
+    <div class="col-12 pdp-checkout-button">
+        <isif condition="${isExpressCheckoutFinalize}">
+            <button id="afterpay-continue-finalize-button" class="${buttonClass}"
+                data-toggle="modal"
+                data-pid="${product.id}"
+                ${!product.readyToOrder || !product.available ? "disabled" : ""}>
+                &nbsp;
+            </button>            
+        <iselse/>
+            <button id="afterpay-express-pdp-button" class="${buttonClass}"
+                data-toggle="modal"
+                data-pid="${product.id}"
+                ${!product.readyToOrder || !product.available ? "disabled" : ""}>
+                &nbsp;
+            </button>
+        </isif>
+    </div>
+</isif>
